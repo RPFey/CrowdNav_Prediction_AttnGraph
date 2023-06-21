@@ -4,6 +4,8 @@ import numpy as np
 import rvo2
 import random
 import copy
+from typing import List
+import math
 
 from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
@@ -14,7 +16,10 @@ from crowd_sim.envs.utils.state import *
 from crowd_sim.envs.utils.action import ActionRot, ActionXY
 from crowd_sim.envs.utils.recorder import Recoder
 
-
+def linefunction(velx,vely,indx,indy,x_range):
+    m = (indy-vely)/(indx-velx)
+    b = vely-m*velx
+    return m*x_range + b 
 
 class CrowdSim(gym.Env):
     """
@@ -75,7 +80,7 @@ class CrowdSim(gym.Env):
         # for render
         self.render_axis=None
 
-        self.humans = []
+        self.humans:List[Human] = []
 
         self.potential = None
 
@@ -571,6 +576,57 @@ class CrowdSim(gym.Env):
 
         return humans_in_view, num_humans_in_view, human_ids
 
+    def get_num_human_in_fov_occ(self):
+        human_ids = [False] * self.human_num
+        humans_in_view = []
+        num_humans_in_view = 0
+
+        dist_to_robo = [ 
+            np.linalg.norm([self.robot.px - human.px, self.robot.py - human.py]) \
+                 for human in self.humans
+        ]
+        sort_indx = np.argsort(dist_to_robo)
+        angle_ranges = []
+
+        for i in sort_indx:
+            human = self.humans[i]
+            alpha = math.atan2(human.py - self.robot.py, human.px - self.robot.px)
+            theta = math.asin( 
+                np.clip(
+                    human.radius / np.sqrt( (human.py - self.robot.py)**2 + (human.px - self.robot.px)**2), 
+                    -1., 1.
+                )
+            )
+
+            angle_range = (alpha - abs(theta), alpha + abs(theta))
+            visible = True
+            for r in angle_ranges:
+                if r[0] <= angle_range[0]  and angle_range[1] <= r[1]:
+                    visible = False
+                    break
+
+                if r[0] < -np.pi :
+                    if r[0] + 2 * np.pi <= angle_range[0] and angle_range[1] <= r[1] + 2*np.pi:
+                        visible = False
+                        break
+                elif r[0] > np.pi :
+                    if r[0] - 2 * np.pi <= angle_range[0] and angle_range[1] <= r[1] - 2*np.pi:
+                        visible = False
+                        break
+            
+            if dist_to_robo[i] > self.robot.sensor_range:
+                visible = False
+
+            if visible:
+                humans_in_view.append(self.humans[i])
+                num_humans_in_view = num_humans_in_view + 1
+                human_ids[i] = True
+                angle_ranges.append(angle_range)
+            else:
+                human_ids[i] = False
+
+        return humans_in_view, num_humans_in_view, human_ids
+
 
 
     def last_human_states_obj(self):
@@ -661,7 +717,7 @@ class CrowdSim(gym.Env):
 
     # compute the observation
     def generate_ob(self, reset):
-        visible_human_states, num_visible_humans, human_visibility = self.get_num_human_in_fov()
+        visible_human_states, num_visible_humans, human_visibility = self.get_num_human_in_fov_occ()
         self.update_last_human_states(human_visibility, reset=reset)
         if self.robot.policy.name in ['lstm_ppo', 'srnn']:
             ob = [num_visible_humans]

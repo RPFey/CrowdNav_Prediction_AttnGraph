@@ -101,7 +101,7 @@ class CrowdSimVarNumCollect(CrowdSimVarNum):
         ob = {}
 
         # nodes
-        visible_humans, num_visibles, human_visibility = self.get_num_human_in_fov()
+        visible_humans, num_visibles, human_visibility = self.get_num_human_in_fov_occ()
 
         humans_out = np.logical_and(self.last_human_observability, np.logical_not(human_visibility))
         num_humans_out = np.sum(humans_out)

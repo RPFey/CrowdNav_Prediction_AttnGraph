@@ -37,9 +37,9 @@ class Config(object):
 
     # config for simulation
     sim = BaseConfig()
-    sim.circle_radius = 6 * np.sqrt(2)
-    sim.arena_size = 6
-    sim.human_num = 20
+    sim.circle_radius = 4
+    sim.arena_size = 10
+    sim.human_num = 16
     # actual human num in each timestep, in [human_num-human_num_range, human_num+human_num_range]
     sim.human_num_range = 0
     sim.predict_steps = 5
@@ -69,7 +69,7 @@ class Config(object):
     # orca or social_force for now
     humans.policy = "orca"
     humans.radius = 0.3
-    humans.v_pref = 1
+    humans.v_pref = 2
     humans.sensor = "coordinates"
     # FOV = this values * PI
     humans.FOV = 2.
@@ -100,12 +100,12 @@ class Config(object):
     # For baseline: srnn; our method: selfAttn_merge_srnn
     robot.policy = 'selfAttn_merge_srnn'
     robot.radius = 0.3
-    robot.v_pref = 1
+    robot.v_pref = 2
     robot.sensor = "coordinates"
     # FOV = this values * PI
     robot.FOV = 2
     # radius of perception range
-    robot.sensor_range = 5
+    robot.sensor_range = 3
 
     # action space of the robot
     action_space = BaseConfig()

@@ -64,7 +64,7 @@ class CrowdSimPred(CrowdSimVarNum):
         ob = {}
 
         # nodes
-        visible_humans, num_visibles, self.human_visibility = self.get_num_human_in_fov()
+        visible_humans, num_visibles, self.human_visibility = self.get_num_human_in_fov_occ()
 
         ob['robot_node'] = self.robot.get_full_state_list_noV()
 
@@ -105,7 +105,7 @@ class CrowdSimPred(CrowdSimVarNum):
         if self.robot.policy.name == 'ORCA':
             # assemble observation for orca: px, py, vx, vy, r
             # include all observable humans from t to t+t_pred
-            _, _, human_visibility = self.get_num_human_in_fov()
+            _, _, human_visibility = self.get_num_human_in_fov_occ()
             # [self.predict_steps + 1, self.human_num, 4]
             human_states = copy.deepcopy(self.calc_human_future_traj(method='truth'))
             # append the radius, convert it to [human_num*(self.predict_steps+1), 5] by treating each predicted pos as a new human

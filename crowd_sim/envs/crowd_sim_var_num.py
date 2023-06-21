@@ -235,7 +235,7 @@ class CrowdSimVarNum(CrowdSim):
         ob = {}
 
         # nodes
-        visible_humans, num_visibles, self.human_visibility = self.get_num_human_in_fov()
+        visible_humans, num_visibles, self.human_visibility = self.get_num_human_in_fov_occ()
 
         ob['robot_node'] = self.robot.get_full_state_list_noV()
 
