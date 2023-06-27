@@ -130,8 +130,6 @@ class CrowdSimPredRealGST(CrowdSimPred):
             newPoint = [extendFactor * newPoint[0, 0], extendFactor * newPoint[1, 0], 1]
             return newPoint
 
-
-
         ax=self.render_axis
         artists=[]
 

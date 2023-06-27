@@ -125,6 +125,7 @@ def make_vec_envs(env_name,
                     envs = VecNormalize(envs, gamma=gamma, ob=False, ret=False)
 
         envs = VecPyTorch(envs, device)
+    
     if pretext_wrapper:
         if gamma is None:
             envs = VecPretextNormalize(envs, ret=False, ob=False, config=config, test=test)

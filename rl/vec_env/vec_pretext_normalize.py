@@ -48,7 +48,6 @@ class VecPretextNormalize(VecEnvWrapper):
             self.args = pickle.load(f)
 
         self.predictor = CrowdNavPredInterfaceMultiEnv(load_path=load_path, device=self.device, config = self.args, num_env = self.num_envs)
-
         temperature_scheduler = Temp_Scheduler(self.args.num_epochs, self.args.init_temp, self.args.init_temp, temp_min=0.03)
         self.tau = temperature_scheduler.decay_whole_process(epoch=100)
 
@@ -177,12 +176,12 @@ class VecPretextNormalize(VecEnvWrapper):
         for i in range(self.num_envs):
             O['spatial_edges'][i] = O['spatial_edges'][i][sorted_idx[i]]
 
-        obs={'robot_node':O['robot_node'],
+        obs={
+            'robot_node':O['robot_node'],
             'spatial_edges':O['spatial_edges'],
             'temporal_edges':O['temporal_edges'],
             'visible_masks':O['visible_masks'],
-             'detected_human_num': O['detected_human_num'],
-
+            'detected_human_num': O['detected_human_num'],
         }
 
         self.last_pos = copy.deepcopy(human_pos)

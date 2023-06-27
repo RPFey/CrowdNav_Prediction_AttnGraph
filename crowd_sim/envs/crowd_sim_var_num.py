@@ -8,7 +8,7 @@ from crowd_sim.envs import *
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.state import JointState
-
+import random
 
 class CrowdSimVarNum(CrowdSim):
     """
@@ -253,6 +253,13 @@ class CrowdSimVarNum(CrowdSim):
                 # vector pointing from human i to robot
                 relative_pos = np.array(
                     [self.last_human_states[i, 0] - self.robot.px, self.last_human_states[i, 1] - self.robot.py])
+                
+                # # TODO Configure the re-ID error
+                # if random.random() < 0.2:
+                #     human_id = random.randint(0, len(self.humans) - 1)
+                # else:
+                #     human_id = self.humans[i].id
+                    
                 all_spatial_edges[self.humans[i].id, :2] = relative_pos
 
         ob['visible_masks'] = np.zeros(self.max_human_num, dtype=np.bool)

@@ -21,6 +21,78 @@ def linefunction(velx,vely,indx,indy,x_range):
     b = vely-m*velx
     return m*x_range + b 
 
+def merge_viewing_angle(angle_list:List[List[float]], view_angle:List[List[float]]):
+    """ merge occlusion view list """
+    tmp_angles = copy.deepcopy(angle_list)
+    tmp_angles.extend(view_angle)
+    
+    tmp_angles.sort(key=lambda x: x[0])
+    merged_angles = []
+    
+    l = tmp_angles[0][0]
+    h = tmp_angles[0][1]
+    
+    for i in range(1,len(tmp_angles)):
+        
+        if tmp_angles[i][0] <= h:
+            h = max(h, tmp_angles[i][1])
+        
+        else:
+            merged_angles.append([l,h])
+            l = tmp_angles[i][0]
+            h = tmp_angles[i][1]
+    
+    merged_angles.append([l,h])
+    return merged_angles
+
+def calculate_visible_ang(angle_list:List[List[float]], view_angle:List[float]):
+    """
+    Calculate the visible degree of view given the current occluded view
+    """
+    if len(angle_list) == 0:
+        return view_angle[1] - view_angle[0]
+
+    available_angle = 0.
+    l, h = view_angle
+
+    # For Lower Bound
+    for idx in range(len(angle_list)):
+        if l <= angle_list[idx][0]:
+            l_idx = idx
+            break 
+    else:
+        l_idx = len(angle_list)
+
+    if l_idx == 0:
+        available_angle += angle_list[0][0] - l
+    elif l_idx == len(angle_list):
+        return h - max(angle_list[-1][1], l)
+    else:
+        available_angle += angle_list[l_idx][0] - max(angle_list[l_idx-1][1], l)
+    
+    # For upper bound
+    for idx in range(len(angle_list) - 1, -1, -1):
+        if h >= angle_list[idx][1]:
+            h_idx = idx
+            break 
+    else:
+        h_idx = -1
+
+    if h_idx == len(angle_list) - 1:
+        available_angle += h - angle_list[-1][1]
+    elif h_idx == -1:
+       return min(angle_list[0][0], h) - l
+    else:
+        available_angle += min(angle_list[h_idx+1][0], h) - angle_list[h_idx][1]
+    
+    if h_idx > l_idx:
+        for j in range(l_idx, h_idx):
+            available_angle += angle_list[j+1][0] - angle_list[j][1]
+    else:
+        available_angle -= angle_list[l_idx][0] - angle_list[h_idx][1]
+    
+    return available_angle
+
 class CrowdSim(gym.Env):
     """
     A base environment
@@ -598,36 +670,37 @@ class CrowdSim(gym.Env):
                 )
             )
 
-            angle_range = (alpha - abs(theta), alpha + abs(theta))
-            visible = True
-            for r in angle_ranges:
-                if r[0] <= angle_range[0]  and angle_range[1] <= r[1]:
-                    visible = False
-                    break
+            # calculate the object FoV range
+            if alpha - abs(theta) < -np.pi:
+                angle_range = [[-np.pi, alpha + abs(theta)],
+                                [alpha - abs(theta) + 2*np.pi, np.pi]]
+            elif alpha + abs(theta) > np.pi:
+                angle_range = [[-np.pi, alpha + abs(theta) - 2*np.pi],
+                                [alpha - abs(theta), np.pi]]
+            else:
+                angle_range = [[alpha - abs(theta), alpha + abs(theta)]]
 
-                if r[0] < -np.pi :
-                    if r[0] + 2 * np.pi <= angle_range[0] and angle_range[1] <= r[1] + 2*np.pi:
-                        visible = False
-                        break
-                elif r[0] > np.pi :
-                    if r[0] - 2 * np.pi <= angle_range[0] and angle_range[1] <= r[1] - 2*np.pi:
-                        visible = False
-                        break
+            if dist_to_robo[i] < self.robot.sensor_range:
+                # if within detection range
+                ava_ang = 0
+                for a in angle_range:
+                    ava_ang += calculate_visible_ang(angle_ranges, a)
+
+                assert ava_ang < 2 * abs(theta) + 1e-3, "wrong calculation"
+                
+                # TODO Configure the Detection Success Rate
+                if ava_ang / (2 * abs(theta)) < 0.2:
+                    human_ids[i] = False
+                else:
+                    humans_in_view.append(self.humans[i])
+                    num_humans_in_view = num_humans_in_view + 1
+                    human_ids[i] = True
+                    angle_ranges = merge_viewing_angle(angle_ranges, angle_range)
             
-            if dist_to_robo[i] > self.robot.sensor_range:
-                visible = False
-
-            if visible:
-                humans_in_view.append(self.humans[i])
-                num_humans_in_view = num_humans_in_view + 1
-                human_ids[i] = True
-                angle_ranges.append(angle_range)
             else:
                 human_ids[i] = False
 
         return humans_in_view, num_humans_in_view, human_ids
-
-
 
     def last_human_states_obj(self):
         '''

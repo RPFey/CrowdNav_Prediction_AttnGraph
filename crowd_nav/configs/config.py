@@ -69,14 +69,14 @@ class Config(object):
     # orca or social_force for now
     humans.policy = "orca"
     humans.radius = 0.3
-    humans.v_pref = 2
+    humans.v_pref = 1
     humans.sensor = "coordinates"
     # FOV = this values * PI
     humans.FOV = 2.
 
     # a human may change its goal before it reaches its old goal
     # if randomize human behaviors, set to True, else set to False
-    humans.random_goal_changing = True
+    humans.random_goal_changing = False
     humans.goal_change_chance = 0.5
 
     # a human may change its goal after it reaches its old goal
@@ -100,7 +100,7 @@ class Config(object):
     # For baseline: srnn; our method: selfAttn_merge_srnn
     robot.policy = 'selfAttn_merge_srnn'
     robot.radius = 0.3
-    robot.v_pref = 2
+    robot.v_pref = 1
     robot.sensor = "coordinates"
     # FOV = this values * PI
     robot.FOV = 2
